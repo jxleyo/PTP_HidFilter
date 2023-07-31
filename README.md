@@ -1,2 +1,2 @@
 # PTP_HidFilter
-Precsion TouchPad HID Filter
+Precision TouchPad HID Filter
