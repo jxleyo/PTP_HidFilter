@@ -88,8 +88,8 @@ KmdfLibraryVersion = $KMDFVERSION$
 [Strings]
 SPSVCINST_ASSOCSERVICE= 0x00000002
 ManufacturerName = "jxleyo.HRP"
-DiskName = "Precsion TouchPad HID Filter Installation Disk"
-PTP_HidFilter_RootDevice.DeviceDesc = "Precsion TouchPad HID Filter Device"
-PTP_HidFilter.DeviceDesc = "Precsion TouchPad HID Filter"
-PTP_HidFilter.NullDeviceDesc = "Precsion TouchPad HID Filter Services"
-PTP_HidFilter.SVCDESC = "Precsion TouchPad HID Filter Service"
+DiskName = "Precision TouchPad HID Filter Installation Disk"
+PTP_HidFilter_RootDevice.DeviceDesc = "Precision TouchPad HID Filter Device"
+PTP_HidFilter.DeviceDesc = "Precision TouchPad HID Filter"
+PTP_HidFilter.NullDeviceDesc = "Precision TouchPad HID Filter Services"
+PTP_HidFilter.SVCDESC = "Precision TouchPad HID Filter Service"
