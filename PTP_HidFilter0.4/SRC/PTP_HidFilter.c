@@ -321,7 +321,7 @@ PtpFilterSelfManagedIoInit(
         goto exit;
     }
     deviceContext->PtpHidReportDescLength = PtpHidReportDescLength;
-    deviceContext->pPtpHidReportDesc = ExAllocatePoolWithTag(NonPagedPoolNx, PtpHidReportDescLength, TPFILTER_POOL_TAG);
+    deviceContext->pPtpHidReportDesc = ExAllocatePool2(NonPagedPoolNx, PtpHidReportDescLength, TPFILTER_POOL_TAG);//ExAllocatePoolWithTag
     if (!deviceContext->pPtpHidReportDesc) {
         KdPrint(("PtpFilterSelfManagedIoInit ExAllocatePoolWithTag failed, %x\n", status));
         goto exit;
@@ -826,7 +826,7 @@ PtpFilterGetDeviceAttribs(
 	// Okay here's one thing: we cannot report the real ID here, otherwise there's will be some great conflict with the USB/BT driver.
 	// Therefore Vendor ID is changed to a hardcoded number
 	pDeviceAttributes->ProductID = deviceContext->ProductID;
-	pDeviceAttributes->VendorID = deviceContext->VendorID;
+    pDeviceAttributes->VendorID = 0;//deviceContext->VendorID;赋值0使得标准触摸板设备的硬件id不被引入到驱动新生成的标准触摸板设备id中，防止多次安装驱动嵌套现象。 
 	pDeviceAttributes->VersionNumber = deviceContext->VersionNumber;
 	WdfRequestSetInformation(Request, sizeof(HID_DEVICE_ATTRIBUTES));
 
@@ -1210,6 +1210,7 @@ PtpFilterInputRequestCompletionCallback(
 
 	WDFREQUEST ptpRequest;
     PUCHAR pOutputReport;
+    PTP_REPORT OutputReport;
 	WDFMEMORY  ptpRequestMemory;
 
 	size_t responseLength;
@@ -1226,6 +1227,7 @@ PtpFilterInputRequestCompletionCallback(
     pOutputReport = TouchDataBuffer;
     size_t OutputSize = responseLength;
 
+    RtlZeroMemory(&OutputReport, OutputSize);
     KdPrint(("PtpFilterInputRequestCompletionCallback start,%x\n", status));
 
 	// Pre-flight check 1: if size is 0, this is not something we need. Ignore the read, and issue next request.
@@ -1239,7 +1241,7 @@ PtpFilterInputRequestCompletionCallback(
     //    KdPrint(("PtpFilterInputRequestCompletionCallback TouchDataBuffer[%x]=,%x\n", i,TouchDataBuffer[i]));
     //}
 
-    if (deviceContext->ProductID == 0xce44 && deviceContext->VendorID == 0x6cb) {//lenovo yoga 14s 2021 laptops I2C HID
+    if (deviceContext->VendorID == 0x6cb) {//synaptic触摸板设备vendorID，lenovo yoga 14s 2021 laptops I2C HID
         InputSize = sizeof(PTP_REPORT);
 
         if (responseLength == InputSize) {
@@ -1256,7 +1258,7 @@ PtpFilterInputRequestCompletionCallback(
 
         }
     }
-    else if (deviceContext->ProductID == 0x60f6 && deviceContext->VendorID == 0x17ef) {//lenovo Duet BT Folio
+    else if (deviceContext->VendorID == 0x17ef) {//lenovo Duet BT Folio
         InputSize = sizeof(PTP_REPORT_DUET);
 
         if (responseLength == InputSize) {
@@ -1273,9 +1275,32 @@ PtpFilterInputRequestCompletionCallback(
             KdPrint(("PtpFilterInputRequestCompletionCallback InputReport.Contacts[0].YL =,%x\n", InputReport.Contacts[0].YL));
             KdPrint(("PtpFilterInputRequestCompletionCallback InputReport.Contacts[0].YH =,%x\n", InputReport.Contacts[0].YH));
 
+
+            // Report header
+            OutputReport.ReportID = FAKE_REPORTID_MULTITOUCH;
+            OutputReport.ContactCount = InputReport.ContactCount;
+            OutputReport.IsButtonClicked = InputReport.IsButtonClicked;
+            OutputReport.ScanTime = InputReport.ScanTime;
+            OutputReport.IsButtonClicked = InputReport.IsButtonClicked;
+            for (INT i = 0; i < InputReport.ContactCount; i++) {
+                OutputReport.Contacts[i].Confidence = InputReport.Contacts[i].Confidence;
+                OutputReport.Contacts[i].ContactID = InputReport.Contacts[i].ContactID;
+                OutputReport.Contacts[i].TipSwitch = InputReport.Contacts[i].TipSwitch;
+                USHORT xh = InputReport.Contacts[i].XH;
+                OutputReport.Contacts[i].X = (xh << 8) + InputReport.Contacts[i].XL;
+                USHORT yh = InputReport.Contacts[i].YH;
+                OutputReport.Contacts[i].Y = (yh << 4) + InputReport.Contacts[i].YL;
+            }
+
+            KdPrint(("PtpFilterInputRequestCompletionCallback OutputReport.Contacts[0].X =,%x\n", OutputReport.Contacts[0].X));
+            KdPrint(("PtpFilterInputRequestCompletionCallback OutputReport.Contacts[0].Y =,%x\n", OutputReport.Contacts[0].Y));
+
+            pOutputReport = (PUCHAR) &OutputReport;
         }
+
+
     }
-    else if (deviceContext->ProductID == 0x8911 && deviceContext->VendorID == 0x48D) {
+    else if (deviceContext->VendorID == 0x48D) {//deviceContext->ProductID == 0x8911 
         InputSize = sizeof(PTP_REPORT);
 
     }

@@ -37,9 +37,9 @@ PTP_HidFilter.sys  = 1,,
 ; transport, but in fact reusing the underlying HID transport (either Bluetooth or USB).
 ; Some high-level patches involved to modify the underlying driver IO handlers.
 
-%PTP_HidFilter.DeviceDesc%=PTP_HidFilter_MiniPortDevice, HID\VID_17EF&UP:000D_U:0005
-%PTP_HidFilter.DeviceDesc%=PTP_HidFilter_MiniPortDevice, HID\VID_048D&UP:000D_U:0005
-%PTP_HidFilter.DeviceDesc%=PTP_HidFilter_MiniPortDevice, HID\VID_06CB&UP:000D_U:0005
+%PTP_HidFilter.DeviceDesc%=PTP_HidFilter_MiniPortDevice, HID\VID_17EF&UP:000D_U:0005;;//lenovo Duet BT Folio
+%PTP_HidFilter.DeviceDesc%=PTP_HidFilter_MiniPortDevice, HID\VID_048D&UP:000D_U:0005;;//hantickå«ÌìöÎ´¥Ãþ°å
+%PTP_HidFilter.DeviceDesc%=PTP_HidFilter_MiniPortDevice, HID\VID_06CB&UP:000D_U:0005;;//Synaptics´¥Ãþ°åÉè±¸Ó²¼þid
 
 
 [FilterDriver_Payload]
