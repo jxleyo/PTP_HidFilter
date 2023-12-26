@@ -1,0 +1,92 @@
+;
+; PTP_HidFilter.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class = HIDClass
+ClassGuid = {745a17a0-74d3-11d0-b6fe-00a0c90f57da}
+Provider=%ManufacturerName%
+CatalogFile=PTP_HidFilter.cat
+DriverVer=08/18/2023,1.0.0.0
+PnpLockdown=1
+
+[DestinationDirs]
+DefaultDestDir = 13
+
+[ControlFlags]
+; We don't want our device to be installable via the non-PnP hardware dialogs
+ExcludeFromSelect = *
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+PTP_HidFilter.sys  = 1,,
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$.10.0
+
+[Standard.NT$ARCH$.10.0]
+; The fact is, you can't filter HIDUSB or friends directly, because they load the export driver called
+; HIDCLASS which overrides their IO Major Function pointers. Therefore we still implement our own HID miniport 
+; transport, but in fact reusing the underlying HID transport (either Bluetooth or USB).
+; Some high-level patches involved to modify the underlying driver IO handlers.
+
+%PTP_HidFilter.DeviceDesc%=PTP_HidFilter_MiniPortDevice, HID\VID_17EF&UP:000D_U:0005;;//lenovo Duet BT Folio
+%PTP_HidFilter.DeviceDesc%=PTP_HidFilter_MiniPortDevice, HID\VID_048D&UP:000D_U:0005;;//hantickå«ÌìöÎ´¥Ãþ°å
+%PTP_HidFilter.DeviceDesc%=PTP_HidFilter_MiniPortDevice, HID\VID_06CB&UP:000D_U:0005;;//Synaptics´¥Ãþ°åÉè±¸Ó²¼þid
+
+
+[FilterDriver_Payload]
+PTP_HidFilter.sys
+
+[PTP_HidFilter_MiniPortDevice.NT]
+CopyFiles=FilterDriver_Payload
+
+
+;-------------- Service installation
+[PTP_HidFilter_MiniPortDevice.NT.Services]
+AddService = PTP_HidFilter,, PTP_HidFilter_Service_Inst
+AddService = mshidkmdf, %SPSVCINST_ASSOCSERVICE%, mshidkmdf_Service_Inst
+
+[PTP_HidFilter_MiniPortDevice.NT.HW]
+AddReg=PTP_HidFilter_AddReg
+
+[PTP_HidFilter_AddReg]
+HKR,,FriendlyName,,%PTP_HidFilter.DeviceDesc%
+HKR,,"LowerFilters",0x00010008,"PTP_HidFilter"
+
+[PTP_HidFilter_MiniPortDevice.NT.Wdf]
+KmdfService = PTP_HidFilter, PTP_HidFilter_wdfsect
+
+; -------------- Microsoft HID KMDF driver install sections
+[mshidkmdf_Service_Inst]
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %10%\System32\Drivers\mshidkmdf.sys
+
+; -------------- PTP_HidFilter driver install sections
+[PTP_HidFilter_Service_Inst]
+DisplayName    = %PTP_HidFilter.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %13%\PTP_HidFilter.sys
+
+[PTP_HidFilter_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName = "jxleyo.HRP"
+DiskName = "Precision TouchPad HID Filter Installation Disk"
+PTP_HidFilter_RootDevice.DeviceDesc = "Precision TouchPad HID Filter Device"
+PTP_HidFilter.DeviceDesc = "Precision TouchPad HID Filter"
+PTP_HidFilter.NullDeviceDesc = "Precision TouchPad HID Filter Services"
+PTP_HidFilter.SVCDESC = "Precision TouchPad HID Filter Service"
